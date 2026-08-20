@@ -1,0 +1,53 @@
+---
+title: "lung plastics"
+author: "Xiting Yan"
+date: "2025-05-06"
+output:
+  html_notebook:
+    code_folding: hide
+    fig_caption: yes
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=TRUE,echo = TRUE,cache=TRUE,warning=FALSE,message = FALSE,results='hold',cache.lazy = FALSE)
+knitr::opts_knit$set(eval.after = 'fig.cap',dev=c('png','postscript'))
+
+my.distinct.colors<-c('#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080', '#ffffff', '#000000')
+
+```
+## Data loading
+
+load in the data first
+```{r}
+# we removed the empty line between the IPF and non-IPF rows.
+# some of the Date of Biopsy needed to be formated as "text" in excel
+library(readxl)
+library(rgl)
+library(ggplot2)
+data.filepath<-"/Users/yanxiting/Documents/Research/Joan_Munoz/IPF_cohort/Copy of Raman_ILD Patient Information.xlsx"
+
+my.data<-read_excel(data.filepath)
+my.data<-as.data.frame(my.data)
+
+my.data$`Date of Biopsy`<-as.numeric(as.Date(my.data$`Date of Biopsy`,format="%d-%b-%Y"))
+
+# for each variable, calculate the p value for the difference between IPF and non-IPF
+my.pvalue<-numeric()
+for(i in 4:ncol(my.data)){
+  
+  if(class(my.data[,i])=="character"){
+    temp.p<-chisq.test(x=as.factor(my.data[,i]),y=as.factor(my.data$Diagnosis))$p.value
+  }else{
+    temp<-split(1:nrow(my.data),my.data$Diagnosis)
+    temp.p<-wilcox.test(x=my.data[temp[[1]],i],y=my.data[temp[[2]],i],paired=FALSE)$p.value
+  }
+  my.pvalue<-c(my.pvalue,temp.p)
+}
+names(my.pvalue)<-colnames(my.data)[4:ncol(my.data)]
+```
